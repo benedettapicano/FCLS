@@ -1,0 +1,468 @@
+agents:
+  coast_guard_operator:
+    label: Coast guard operator
+    type: coast_guard_operator
+    location: coastal_area_A
+    capabilities: [authorize_swimming, issue_warning, request_sampling, coordinate_rescue]
+    preferences:
+      safety_first: true
+      false_negative_cost: high
+    privacy:
+      access_level: operational
+  environmental_authority:
+    label: Environmental authority
+    type: environmental_authority
+    location: coastal_area_A
+    capabilities: [monitor_pollution, enforce_bathing_water_rules]
+    preferences:
+      pollution_compliance: high
+    privacy:
+      access_level: authority
+  tourist:
+    label: Tourist
+    type: tourist
+    location: coastal_area_A
+    capabilities: [receive_recommendation]
+    preferences:
+      personalized_advice: true
+    privacy:
+      access_level: public
+
+goals:
+  assess_swimming_safety:
+    label: Assess swimming safety
+    description: Is it safe to authorize swimming activities in this coastal area?
+    priority: high
+    requirements: [water_quality, weather, wave, current, crowd, pollution]
+    admissible_actions: [authorize_swimming, restrict_swimming, notify_warning, request_additional_sampling]
+    query_patterns: [safe to authorize swimming, swimming safety, safe to swim, authorize swimming]
+    event_patterns: [sudden_pollution_increase, storm_warning, rip_current_alert]
+    constraints:
+      false_negative_cost: high
+  assess_pollution_event:
+    label: Assess pollution event
+    description: Is there an environmentally relevant pollution event?
+    priority: high
+    requirements: [water_quality, pollution]
+    admissible_actions: [notify_environmental_authority, request_additional_sampling]
+    query_patterns: [pollution event, water pollution, bathing water quality]
+    event_patterns: [sudden_pollution_increase]
+
+contexts:
+  coastal_safety_regulation:
+    label: Coastal safety regulation context
+    location: coastal_area_A
+    environment:
+      area_type: coastal_bathing_area
+      season: summer
+      regulation: bathing_safety
+    user:
+      role: coast_guard_operator
+    operation:
+      decision_type: swimming_authorization
+      latency_requirement: low
+
+requirements:
+  water_quality:
+    label: Water quality
+    category: environmental_safety
+    description: microbiological and chemical water quality for bathing
+    priority: high
+    labels: [ecoli_level, enterococci_level, turbidity, ph, dissolved_oxygen]
+  weather:
+    label: Weather
+    category: meteorological_safety
+    description: weather conditions relevant to bathing safety
+    priority: high
+    labels: [wind_speed, storm_risk, rainfall]
+  wave:
+    label: Wave conditions
+    category: marine_safety
+    description: wave height and sea state
+    priority: high
+    labels: [wave_height, wave_period, sea_state]
+  current:
+    label: Currents
+    category: marine_safety
+    description: current speed and rip-current risk
+    priority: high
+    labels: [current_speed, rip_current_risk]
+  crowd:
+    label: Human presence
+    category: operational_safety
+    description: beach and swimmer crowding information
+    priority: normal
+    labels: [crowd_density, swimmer_presence]
+  pollution:
+    label: Pollution evidence
+    category: environmental_safety
+    description: visible or reported pollution evidence
+    priority: high
+    labels: [oil_slick, algal_bloom, debris_presence]
+  mobility:
+    label: Mobility information
+    category: non_swimming_context
+    description: road or parking information not directly required for swimming safety
+    priority: low
+    labels: [parking_availability, road_traffic_density]
+  infrastructure:
+    label: Infrastructure status
+    category: non_swimming_context
+    description: edge/cloud infrastructure indicators
+    priority: low
+    labels: [edge_cpu_load, network_latency]
+
+sources:
+  buoy_1:
+    label: Smart buoy 1
+    type: buoy
+    modalities: [water_quality, hydrological, marine]
+    reliability_range: [0.82, 0.98]
+    location: coastal_area_A
+  uav_1:
+    label: UAV 1
+    type: uav
+    modalities: [visual, thermal, marine]
+    reliability_range: [0.70, 0.94]
+    location: coastal_area_A
+  camera_1:
+    label: Coastal surveillance camera
+    type: camera
+    modalities: [visual]
+    reliability_range: [0.65, 0.90]
+    location: coastal_area_A
+  weather_station_1:
+    label: Weather station
+    type: weather_station
+    modalities: [meteorological]
+    reliability_range: [0.78, 0.97]
+    location: coastal_area_A
+  environmental_db:
+    label: Environmental historical database
+    type: environmental_database
+    modalities: [historical_record, water_quality]
+    reliability_range: [0.55, 0.88]
+    location: coastal_area_A
+  edge_monitor:
+    label: Edge infrastructure monitor
+    type: edge_monitor
+    modalities: [infrastructure]
+    reliability_range: [0.90, 0.99]
+    location: coastal_area_A
+  mobility_service:
+    label: Mobility information service
+    type: external_service
+    modalities: [mobility]
+    reliability_range: [0.55, 0.85]
+    location: coastal_area_A
+
+environment_entities:
+  coastal_area_A:
+    label: Coastal area A
+    type: coastal_area
+    location: coastal_area_A
+    attributes:
+      has_bathing_zone: true
+      has_lifeguard: true
+    tau: [0.0, 24.0]
+  bathing_zone_A:
+    label: Bathing zone A
+    type: bathing_zone
+    location: coastal_area_A
+    attributes:
+      managed_by: coast_guard_operator
+    tau: [0.0, 24.0]
+
+observation_templates:
+  ecoli_level_safe:
+    semantic_label: ecoli_level
+    requirement: water_quality
+    modality: water_quality
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.98
+    context_affinity: 0.95
+    agent_affinity: 0.98
+    risk_level: low
+    risk_direction: safe
+    value_type: categorical
+    values: [low, compliant]
+    agent_types: [coast_guard_operator, environmental_authority, tourist]
+  ecoli_level_high:
+    semantic_label: ecoli_level
+    requirement: water_quality
+    modality: water_quality
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.99
+    context_affinity: 0.98
+    agent_affinity: 0.99
+    risk_level: high
+    risk_direction: unsafe
+    value_type: categorical
+    values: [high, non_compliant]
+    agent_types: [coast_guard_operator, environmental_authority, tourist]
+  turbidity_high:
+    semantic_label: turbidity
+    requirement: water_quality
+    modality: water_quality
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.90
+    context_affinity: 0.88
+    agent_affinity: 0.88
+    risk_level: moderate
+    risk_direction: caution
+    value_type: categorical
+    values: [elevated, high]
+    agent_types: [coast_guard_operator, environmental_authority]
+  storm_risk_high:
+    semantic_label: storm_risk
+    requirement: weather
+    modality: meteorological
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.95
+    context_affinity: 0.95
+    agent_affinity: 0.95
+    risk_level: high
+    risk_direction: unsafe
+    value_type: categorical
+    values: [high]
+    agent_types: [coast_guard_operator, tourist]
+  wind_speed:
+    semantic_label: wind_speed
+    requirement: weather
+    modality: meteorological
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.82
+    context_affinity: 0.86
+    agent_affinity: 0.84
+    risk_level: moderate
+    risk_direction: caution
+    value_type: numeric
+    value_range: [4.0, 18.0]
+    agent_types: [coast_guard_operator]
+  wave_height_high:
+    semantic_label: wave_height
+    requirement: wave
+    modality: marine
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.96
+    context_affinity: 0.94
+    agent_affinity: 0.95
+    risk_level: high
+    risk_direction: unsafe
+    value_type: numeric
+    value_range: [1.4, 3.2]
+    agent_types: [coast_guard_operator, tourist]
+  wave_height_low:
+    semantic_label: wave_height
+    requirement: wave
+    modality: marine
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.94
+    context_affinity: 0.92
+    agent_affinity: 0.90
+    risk_level: low
+    risk_direction: safe
+    value_type: numeric
+    value_range: [0.1, 0.8]
+    agent_types: [coast_guard_operator, tourist]
+  current_speed_high:
+    semantic_label: current_speed
+    requirement: current
+    modality: hydrological
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.94
+    context_affinity: 0.93
+    agent_affinity: 0.95
+    risk_level: high
+    risk_direction: unsafe
+    value_type: numeric
+    value_range: [1.1, 2.4]
+    agent_types: [coast_guard_operator]
+  rip_current_risk:
+    semantic_label: rip_current_risk
+    requirement: current
+    modality: marine
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.97
+    context_affinity: 0.96
+    agent_affinity: 0.98
+    risk_level: critical
+    risk_direction: unsafe
+    value_type: categorical
+    values: [present, high]
+    agent_types: [coast_guard_operator, tourist]
+  crowd_density:
+    semantic_label: crowd_density
+    requirement: crowd
+    modality: visual
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.83
+    context_affinity: 0.90
+    agent_affinity: 0.88
+    risk_level: moderate
+    risk_direction: operational
+    value_type: categorical
+    values: [low, moderate, high]
+    agent_types: [coast_guard_operator]
+  oil_slick:
+    semantic_label: oil_slick
+    requirement: pollution
+    modality: visual
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.93
+    context_affinity: 0.92
+    agent_affinity: 0.95
+    risk_level: high
+    risk_direction: unsafe
+    value_type: categorical
+    values: [visible]
+    agent_types: [coast_guard_operator, environmental_authority]
+  algal_bloom:
+    semantic_label: algal_bloom
+    requirement: pollution
+    modality: visual
+    category: relevant
+    physical_semantic_match: true
+    semantic_affinity: 0.89
+    context_affinity: 0.88
+    agent_affinity: 0.90
+    risk_level: high
+    risk_direction: unsafe
+    value_type: categorical
+    values: [visible, suspected]
+    agent_types: [coast_guard_operator, environmental_authority]
+  parking_availability:
+    semantic_label: parking_availability
+    requirement: mobility
+    modality: mobility
+    category: irrelevant
+    physical_semantic_match: true
+    semantic_affinity: 0.08
+    context_affinity: 0.35
+    agent_affinity: 0.15
+    risk_level: neutral
+    risk_direction: none
+    value_type: categorical
+    values: [low, medium, high]
+    agent_types: [tourist]
+  road_traffic_density:
+    semantic_label: road_traffic_density
+    requirement: mobility
+    modality: mobility
+    category: irrelevant
+    physical_semantic_match: true
+    semantic_affinity: 0.05
+    context_affinity: 0.25
+    agent_affinity: 0.12
+    risk_level: neutral
+    risk_direction: none
+    value_type: categorical
+    values: [low, medium, high]
+    agent_types: [tourist]
+  edge_cpu_load:
+    semantic_label: edge_cpu_load
+    requirement: infrastructure
+    modality: infrastructure
+    category: irrelevant
+    physical_semantic_match: true
+    semantic_affinity: 0.03
+    context_affinity: 0.20
+    agent_affinity: 0.05
+    risk_level: neutral
+    risk_direction: none
+    value_type: numeric
+    value_range: [0.1, 0.95]
+    agent_types: [edge_operator]
+  restaurant_crowding:
+    semantic_label: restaurant_crowding
+    requirement: mobility
+    modality: visual
+    category: irrelevant
+    physical_semantic_match: true
+    semantic_affinity: 0.04
+    context_affinity: 0.12
+    agent_affinity: 0.05
+    risk_level: neutral
+    risk_direction: none
+    value_type: categorical
+    values: [low, medium, high]
+    agent_types: [tourist]
+
+actions:
+  authorize_swimming:
+    label: Authorize swimming
+    type: recommendation
+    target: coast_guard_operator
+    decision_state: safe
+    preconditions: [belief_swimming_safe]
+    effects: [swimming_authorized]
+    priority: normal
+  restrict_swimming:
+    label: Restrict swimming
+    type: recommendation
+    target: coast_guard_operator
+    decision_state: unsafe
+    preconditions: [belief_swimming_unsafe]
+    effects: [swimming_restricted]
+    priority: high
+  notify_warning:
+    label: Notify warning
+    type: notification
+    target: coast_guard_operator
+    decision_state: unsafe
+    preconditions: [belief_swimming_unsafe]
+    effects: [warning_issued]
+    priority: high
+  request_additional_sampling:
+    label: Request additional sampling
+    type: recommendation
+    target: coast_guard_operator
+    decision_state: uncertain
+    preconditions: [belief_uncertain]
+    effects: [additional_observations_requested]
+    priority: normal
+  notify_environmental_authority:
+    label: Notify environmental authority
+    type: notification
+    target: environmental_authority
+    decision_state: unsafe
+    preconditions: [pollution_event_detected]
+    effects: [authority_notified]
+    priority: high
+
+event_triggers:
+  sudden_pollution_increase:
+    event_type: sudden_pollution_increase
+    activates_goal: assess_swimming_safety
+    condition:
+      semantic_label: ecoli_level
+      risk_level: high
+  storm_warning:
+    event_type: storm_warning
+    activates_goal: assess_swimming_safety
+    condition:
+      semantic_label: storm_risk
+      risk_level: high
+  rip_current_alert:
+    event_type: rip_current_alert
+    activates_goal: assess_swimming_safety
+    condition:
+      semantic_label: rip_current_risk
+      risk_level: critical
+
+decision_rules:
+  actions_by_state:
+    safe: [authorize_swimming]
+    unsafe: [restrict_swimming, notify_warning]
+    uncertain: [request_additional_sampling]
